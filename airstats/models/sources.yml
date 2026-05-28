@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: raw
+    database: AIRSTATS
+    schema: RAW
+    tables:
+      - name: airports
+        description: Global airport registry from OurAirports.com
+      - name: runways
+        description: Runway information for airports
+
+  - name: comments
+    database: AIRSTATS
+    schema: RAW
+    tables:
+      - name: airport_comments
+        identifier: airport_comments
+        description: User-submitted comments about airports

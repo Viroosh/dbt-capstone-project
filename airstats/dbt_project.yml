@@ -1,0 +1,25 @@
+name: airstats
+
+profile: airstats
+
+seed-paths: ["seeds"]
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+docs-paths: ["docs"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+tests:
+  airstats:
+    +store_failures: true
+    +schema: test_failures
+
+models:
+  airstats:
+    silver:
+      +materialized: table

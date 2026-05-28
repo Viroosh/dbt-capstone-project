@@ -1,0 +1,129 @@
+version: 2
+
+models:
+  - name: silver_airports
+    description: Cleaned airport dimension with standardized column names and location attributes.
+    columns:
+      - name: airport_ident
+        description: '{{ doc("airport_ident") }}'
+        data_tests:
+          - unique
+          - not_null
+      - name: airport_type
+        description: '{{ doc("airport_type") }}'
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - small_airport
+                  - medium_airport
+                  - large_airport
+                  - heliport
+                  - seaplane_base
+                  - balloonport
+                  - closed
+      - name: airport_name
+        description: Official airport name.
+        data_tests:
+          - not_null
+      - name: airport_lat
+        description: Airport latitude in decimal degrees.
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: -90
+                max_value: 90
+      - name: airport_long
+        description: Airport longitude in decimal degrees.
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: -180
+                max_value: 180
+      - name: continent
+        description: Two-letter continent code.
+      - name: iso_country
+        description: ISO 3166-1 alpha-2 country code.
+        data_tests:
+          - not_null
+      - name: iso_region
+        description: ISO 3166-2 region code.
+
+  - name: silver_runways
+    description: Cleaned runway facts linked to airports by ICAO code.
+    columns:
+      - name: runway_id
+        description: Primary key for the runway record.
+        data_tests:
+          - unique
+          - not_null
+      - name: airport_ident
+        description: '{{ doc("airport_ident") }}'
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('silver_airports')
+                field: airport_ident
+              config:
+                severity: warn
+      - name: runway_length_ft
+        description: Runway length in feet.
+      - name: runway_width_ft
+        description: Runway width in feet.
+      - name: runway_surface
+        description: Runway surface material with unknown values replaced by __UNKNOWN__.
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_not_be_null
+      - name: runway_lighted
+        description: Flag indicating whether the runway is lit at night.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+      - name: runway_closed
+        description: Flag indicating whether the runway is closed.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+
+  - name: silver_airport_comments
+    description: Incremental table of cleaned airport comments with empty bodies removed.
+    columns:
+      - name: comment_id
+        description: Primary key for the comment record.
+        data_tests:
+          - unique
+          - not_null
+      - name: airport_ident
+        description: '{{ doc("airport_ident") }}'
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('silver_airports')
+                field: airport_ident
+              config:
+                severity: warn
+      - name: comment_timestamp
+        description: Timestamp when the comment was posted.
+        data_tests:
+          - not_null
+      - name: member_nickname
+        description: Username of the commenter with nulls replaced by __UNKNOWN__.
+        data_tests:
+          - not_null
+      - name: comment_subject
+        description: Subject line of the comment.
+      - name: comment_body
+        description: Body text of the comment.
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_not_be_null
+      - name: loaded_at
+        description: '{{ doc("loaded_at") }}'
+        data_tests:
+          - not_null

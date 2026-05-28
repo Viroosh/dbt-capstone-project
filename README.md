@@ -252,18 +252,46 @@ Add a new record to `RAW.airport_comments`. Then materialize the incremental mod
 
 Add your solution in the next lines:
 * Adding a new record:
-  ```
-  REPLACE THIS CODE BLOCK BY PASTING THE SQL for adding a new record to `RAW.airport_comments`
+  ```sql
+  INSERT INTO AIRSTATS.RAW.airport_comments (
+      id,
+      thread_ref,
+      airport_ref,
+      airport_ident,
+      date,
+      member_nickname,
+      subject,
+      body,
+      loaded_at
+  )
+  SELECT
+      (SELECT COALESCE(MAX(id), 0) + 1 FROM AIRSTATS.RAW.airport_comments),
+      (SELECT COALESCE(MAX(id), 0) + 1 FROM AIRSTATS.RAW.airport_comments),
+      a.id,
+      'KLAX',
+      CURRENT_TIMESTAMP(),
+      'capstone_student',
+      'Capstone incremental test',
+      'This comment was inserted to validate the silver_airport_comments incremental model.',
+      CURRENT_TIMESTAMP()
+  FROM AIRSTATS.RAW.airports a
+  WHERE a.ident = 'KLAX'
+  LIMIT 1;
   ```
 * Command to execute to update this model (but only this model, not all the models):
-  ```
-  REPLACE THIS CODE BLOCK BY PASTING THE dbt COMMAND YOU EXECUTED
+  ```sh
+  dbt run --select silver_airport_comments --profiles-dir .
   ``` 
 * Execute an SQL on the Snowflake UI to ensure the new record has been added:
+  ```sql
+  SELECT comment_id, airport_ident, comment_subject, member_nickname, loaded_at
+  FROM AIRSTATS.DEV.silver_airport_comments
+  WHERE comment_subject = 'Capstone incremental test';
   ```
-  REPLACE THIS CODE BLOCK BY PASTING 
-  1) THE SQL to extract the new record from `silver_airport_comments`
-  2) THE result you see in Snowflake
+  Result:
+  ```
+  COMMENT_ID | AIRPORT_IDENT | COMMENT_SUBJECT           | MEMBER_NICKNAME  | LOADED_AT
+  602622     | KLAX          | Capstone incremental test | capstone_student | 2026-05-28T18:11:20.096Z
   ``` 
 
 **Requirements** 
@@ -280,12 +308,15 @@ Add your solution in the next lines:
 The airport `Los Angeles County Sheriff's Department Heliport` (airport_ident: `01CN`) must be closed. Simulate this change by updating the `type` column of this heliport to `closed` in `RAW.AIRPORTS`, then run `dbt run --select silver_airports` followed by `dbt snapshot`.
 
 * Updating the record to "closed":
-  ```
-  REPLACE THIS BLOCK BY PASTING THE SQL you executed
+  ```sql
+  UPDATE AIRSTATS.RAW.airports
+  SET type = 'closed'
+  WHERE ident = '01CN';
   ```
 * Command to execute and snapshot update:
-  ```
-  REPLACE THIS CODE BLOCK BY PASTING THE dbt COMMAND YOU EXECUTED
+  ```sh
+  dbt run --select silver_airports --profiles-dir .
+  dbt snapshot --select scd_silver_airports --profiles-dir .
   ``` 
 
 #### Analyses
